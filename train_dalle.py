@@ -128,6 +128,8 @@ model_group.add_argument('--reversible', dest = 'reversible', action='store_true
 
 model_group.add_argument('--loss_img_weight', default = 7, type = int, help = 'Image loss weight')
 
+model_group.add_argument('--image_size', default = 256, type = int, help = 'Image size')
+
 model_group.add_argument('--attn_types', default = 'full', type = str, help = 'comma separated list of attention types. attention type can be: full or sparse or axial_row or axial_col or conv_like.')
 
 model_group.add_argument('--shift_tokens', help = 'Use the shift tokens feature', action = 'store_true')
@@ -177,6 +179,7 @@ LR_DECAY = args.lr_decay
 SAVE_EVERY_N_STEPS = args.save_every_n_steps
 KEEP_N_CHECKPOINTS = args.keep_n_checkpoints
 
+IMAGE_SIZE = args.image_size
 MODEL_DIM = args.dim
 TEXT_SEQ_LEN = args.text_seq_len
 DEPTH = args.depth
@@ -248,17 +251,16 @@ if RESUME:
     scheduler_state = loaded_obj.get('scheduler_state')
 
     if vae_params is not None:
-        vae = DiscreteVAE(**vae_params)
+        vae = DiscreteVAE(IMAGE_SIZE, **vae_params[1:])
     else:
         if args.taming:
-            vae = VQGanVAE(VQGAN_MODEL_PATH, VQGAN_CONFIG_PATH)
+            vae = VQGanVAE(IMAGE_SIZE, VQGAN_MODEL_PATH, VQGAN_CONFIG_PATH)
         else:
-            vae = OpenAIDiscreteVAE()
+            vae = OpenAIDiscreteVAE(IMAGE_SIZE)
 
     dalle_params = dict(
         **dalle_params
     )
-    IMAGE_SIZE = vae.image_size
     resume_epoch = loaded_obj.get('epoch', 0)
 else:
     if exists(VAE_PATH):
@@ -274,7 +276,7 @@ else:
 
         vae_params, weights = loaded_obj['hparams'], loaded_obj['weights']
 
-        vae = DiscreteVAE(**vae_params)
+        vae = DiscreteVAE(IMAGE_SIZE, **vae_params[1:])
         vae.load_state_dict(weights)
     else:
         if distr_backend.is_root_worker():
@@ -282,11 +284,9 @@ else:
         vae_params = None
 
         if args.taming:
-            vae = VQGanVAE(VQGAN_MODEL_PATH, VQGAN_CONFIG_PATH)
+            vae = VQGanVAE(IMAGE_SIZE, VQGAN_MODEL_PATH, VQGAN_CONFIG_PATH)
         else:
-            vae = OpenAIDiscreteVAE()
-
-    IMAGE_SIZE = vae.image_size
+            vae = OpenAIDiscreteVAE(IMAGE_SIZE)
 
     dalle_params = dict(
         num_text_tokens=tokenizer.vocab_size,

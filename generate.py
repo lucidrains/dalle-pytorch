@@ -43,6 +43,9 @@ parser.add_argument('--batch_size', type = int, default = 4, required = False,
 parser.add_argument('--top_k', type = float, default = 0.9, required = False,
                     help='top k filter threshold')
 
+parser.add_argument('--image_size', type = int, default = 256, required = False,
+                    help='image size')
+
 parser.add_argument('--outputs_dir', type = str, default = './outputs', required = False,
                     help='output directory')
 
@@ -83,12 +86,14 @@ dalle_params, vae_params, weights = load_obj.pop('hparams'), load_obj.pop('vae_p
 
 dalle_params.pop('vae', None) # cleanup later
 
+IMAGE_SIZE = args.image_size
+
 if vae_params is not None:
-    vae = DiscreteVAE(**vae_params)
+    vae = DiscreteVAE(IMAGE_SIZE, **vae_params[1:])
 elif not args.taming:
-    vae = OpenAIDiscreteVAE()
+    vae = OpenAIDiscreteVAE(IMAGE_SIZE)
 else:
-    vae = VQGanVAE(args.vqgan_model_path, args.vqgan_config_path)
+    vae = VQGanVAE(IMAGE_SIZE, args.vqgan_model_path, args.vqgan_config_path)
 
 
 dalle = DALLE(vae = vae, **dalle_params).cuda()
@@ -96,8 +101,6 @@ dalle = DALLE(vae = vae, **dalle_params).cuda()
 dalle.load_state_dict(weights)
 
 # generate images
-
-image_size = vae.image_size
 
 texts = args.text.split('|')
 
