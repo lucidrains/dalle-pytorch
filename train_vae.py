@@ -259,7 +259,7 @@ for epoch in range(EPOCHS):
 
                 images, recons = map(lambda t: t[:k], (images, recons))
                 images, recons, hard_recons, codes = map(lambda t: t.detach().cpu(), (images, recons, hard_recons, codes))
-                images, recons, hard_recons = map(lambda t: make_grid(t.float(), nrow = int(sqrt(k)), normalize = True, range = (-1, 1)), (images, recons, hard_recons))
+                images, recons, hard_recons = map(lambda t: make_grid(t.float(), nrow = int(sqrt(k)), normalize = True), (images, recons, hard_recons))
 
                 logs = {
                     **logs,
